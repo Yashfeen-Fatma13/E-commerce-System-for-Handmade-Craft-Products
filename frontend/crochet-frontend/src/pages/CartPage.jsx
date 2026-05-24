@@ -5,10 +5,10 @@ import axios from "axios";
 function CartPage() {
   const { cart, removeFromCart } = useContext(CartContext);
 
-  // 🔥 TOTAL PRICE
+  // TOTAL PRICE
   const total = cart.reduce((sum, item) => sum + Number(item.price), 0);
 
-  // 🔥 LOAD RAZORPAY SCRIPT
+  // LOAD RAZORPAY SCRIPT
   const loadRazorpay = () => {
     return new Promise((resolve) => {
       const script = document.createElement("script");
@@ -23,7 +23,7 @@ function CartPage() {
     });
   };
 
-  // 🔥 CHECKOUT FUNCTION (UPDATED)
+  // CHECKOUT FUNCTION (UPDATED)
   const handleCheckout = async () => {
     try {
       const isLoaded = await loadRazorpay();
