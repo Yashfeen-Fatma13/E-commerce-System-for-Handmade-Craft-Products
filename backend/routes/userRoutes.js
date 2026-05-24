@@ -1,37 +1,91 @@
 const express = require("express");
 const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
+
 const User = require("../models/User");
 
 const router = express.Router();
 
-// REGISTER
+// 🔥 REGISTER
 router.post("/register", async (req, res) => {
-  const { name, email, password } = req.body;
+  try {
+    const { name, email, password } = req.body;
 
-  const hashedPassword = await bcrypt.hash(password, 10);
+    // CHECK USER
+    const userExists = await User.findOne({ email });
 
-  const user = await User.create({
-    name,
-    email,
-    password: hashedPassword
-  });
+    if (userExists) {
+      return res.status(400).json({
+        message: "User already exists",
+      });
+    }
 
-  res.json(user);
+    // CREATE USER
+    const user = await User.create({
+      name,
+      email,
+      password,
+    });
+
+    // TOKEN
+    const token = jwt.sign(
+      {
+        id: user._id,
+      },
+      "SECRETKEY",
+      {
+        expiresIn: "30d",
+      }
+    );
+
+    res.status(201).json({
+      _id: user._id,
+      name: user.name,
+      email: user.email,
+      token,
+    });
+  } catch (error) {
+    res.status(500).json({
+      message: error.message,
+    });
+  }
 });
 
-// LOGIN
+// 🔥 LOGIN
 router.post("/login", async (req, res) => {
-  const { email, password } = req.body;
+  try {
+    const { email, password } = req.body;
 
-  const user = await User.findOne({ email });
+    // FIND USER
+    const user = await User.findOne({ email });
 
-  if (user && (await bcrypt.compare(password, user.password))) {
-    res.json({
-      token: jwt.sign({ id: user._id }, "secret", { expiresIn: "1d" })
+    // CHECK PASSWORD
+    if (user && (await user.matchPassword(password))) {
+      const token = jwt.sign(
+        {
+          id: user._id,
+        },
+        "SECRETKEY",
+        {
+          expiresIn: "30d",
+        }
+      );
+
+      res.json({
+        _id: user._id,
+        name: user.name,
+        email: user.email,
+        token,
+      });
+    } else {
+      res.status(401).json({
+        message: "Invalid email or password",
+      });
+    }
+  } catch (error) {
+    res.status(500).json({
+      message: error.message,
     });
-  } else {
-    res.status(401).json({ message: "Invalid credentials" });
   }
 });
 
